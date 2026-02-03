@@ -68,45 +68,64 @@ def newGame(p1: str, p2: str) -> dict:
 
 def printBoard(board: list) -> str:
     """
-    Return a nicely formatted string representation of the game board.
-    
-    The board is a 3D list [level][row][col]. The function displays each level
-    with clear horizontal and vertical indexes. Empty cells (0) are shown as spaces,
-    blocked cells ('x') are shown as 'x', and player counters (1, 2) are shown as digits.
-    
+    The board is a 3D list [level][row][col].
+    The function returns a nicely formatted string representation of the game board.
+    Empty cells (0) are shown as spaces, blocked cells ('x') are shown as 'x',
+    and player moves are shown as digits (1,2).
+
     :param board: The 3D board list [level][row][col]
     :type board: list
     :return: A formatted string representation of the board
     :rtype: str
     """
-    result = []
-    
-    # Iterate through each level
-    for level in range(len(board)):
-        result.append(f"Level {level}:")
-        
-        # Column headers (0-5)
-        header = "   "  # Space for row labels
-        for col in range(len(board[level][0])):
-            header += f" {col}"
-        result.append(header)
-        
-        # Each row
-        for row in range(len(board[level])):
-            row_str = f" {row} "  # Row label
-            for col in range(len(board[level][row])):
-                cell = board[level][row][col]
-                if cell == 0:
-                    row_str += " ."  # Empty cell shown as dot
-                elif cell == 'x':
-                    row_str += " x"  # Blocked cell
+    output = []
+
+    # Board dimensions
+    num_layers = 5
+    num_rows = 6
+    num_cols = 6
+
+    # Labels
+    col_labels = "ABCDEF"
+    row_labels = "abcdef"
+
+    # Header Labels
+    header_parts = []
+    for i in range(num_layers):
+        layer_str = f"Layer {i+1}"
+        header_parts.append(f"{(' ')}{layer_str}{(' ' )}")
+
+    # The '  ' at the beginning is because of the space taken by the row label in other lines
+    output.append("  " + " | ".join(header_parts))
+
+    # Column Labels
+    col_header_segment = "|" + "|".join(col_labels) + "|"
+    # The '   ' at the beginning is because of the row label
+    output.append("   " + "   ".join([col_header_segment for _ in range(num_layers)]))
+
+    # Separator Line
+    sep_segment = "-" + "+-" * num_cols
+    output.append("   " + " | ".join([sep_segment for _ in range(num_layers)]))
+
+    # Rows
+    for r in range(num_rows):
+        row_parts = []
+        for l in range(num_layers):
+            cells = []
+            for c in range(num_cols):
+                val = board[l][r][c]
+                # Empty cells (0) are dashes (_), 'x' is 'x', 1 or 2 are digits
+                if val == 0:
+                    cells.append(" _")
+                elif val == 'x':
+                    cells.append("x")
                 else:
-                    row_str += f" {cell}"  # Player counter (1 or 2)
-            result.append(row_str)
-        
-        result.append("")  # Blank line between levels
-    
-    return "\n".join(result)
+                    cells.append(str(val))
+            row_parts.append(f"{row_labels[r]}|" + "|".join(cells))
+        output.append(" ".join(row_parts))
+
+    return "\n".join(output)
+
 
 ###############################################################################
 
