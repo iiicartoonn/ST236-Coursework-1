@@ -1,9 +1,9 @@
 import csv
 from copy import deepcopy
 
-groupNumber = 0
+groupNumber = 6
 groupName = {'Matthew Thorpe' : 'u2272464',\
-             'Person 2 name' : 'Person 2 Username',\
+             'Pedro Ramos Cervero' : 'u5593619',\
              'Person 3 name' : 'Person 3 Username',\
              'Person 4 name' : 'Person 4 Username',\
              'Person 5 name' : 'Person 5 Username'}
@@ -65,6 +65,48 @@ def newGame(p1: str, p2: str) -> dict:
 
 ###############################################################################
 # Task 2
+
+def printBoard(board: list) -> str:
+    """
+    Return a nicely formatted string representation of the game board.
+    
+    The board is a 3D list [level][row][col]. The function displays each level
+    with clear horizontal and vertical indexes. Empty cells (0) are shown as spaces,
+    blocked cells ('x') are shown as 'x', and player counters (1, 2) are shown as digits.
+    
+    :param board: The 3D board list [level][row][col]
+    :type board: list
+    :return: A formatted string representation of the board
+    :rtype: str
+    """
+    result = []
+    
+    # Iterate through each level
+    for level in range(len(board)):
+        result.append(f"Level {level}:")
+        
+        # Column headers (0-5)
+        header = "   "  # Space for row labels
+        for col in range(len(board[level][0])):
+            header += f" {col}"
+        result.append(header)
+        
+        # Each row
+        for row in range(len(board[level])):
+            row_str = f" {row} "  # Row label
+            for col in range(len(board[level][row])):
+                cell = board[level][row][col]
+                if cell == 0:
+                    row_str += " ."  # Empty cell shown as dot
+                elif cell == 'x':
+                    row_str += " x"  # Blocked cell
+                else:
+                    row_str += f" {cell}"  # Player counter (1 or 2)
+            result.append(row_str)
+        
+        result.append("")  # Blank line between levels
+    
+    return "\n".join(result)
 
 ###############################################################################
 
