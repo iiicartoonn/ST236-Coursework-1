@@ -65,12 +65,11 @@ def newGame(p1: str, p2: str) -> dict:
 
 ###############################################################################
 # Task 2
-
 def printBoard(board: list) -> str:
     """
     The board is a 3D list [level][row][col].
     The function returns a nicely formatted string representation of the game board.
-    Empty cells (0) are shown as spaces, blocked cells ('x') are shown as 'x',
+    Empty cells (0) are shown as spaces, blocked cells are shown as 'x',
     and player moves are shown as digits (1,2).
 
     :param board: The 3D board list [level][row][col]
@@ -78,100 +77,235 @@ def printBoard(board: list) -> str:
     :return: A formatted string representation of the board
     :rtype: str
     """
-    output = []
+    # Defensive check for invalid boards
+    if not isinstance(board, list) or len(board) != 5:
+        raise ValueError("board must be a 3D list with 5 layers.")
 
-    # Board dimensions
-    num_layers = 5
-    num_rows = 6
-    num_cols = 6
+    def cell_to_char(v) -> str:
+        # Show empty as blank; keep numbers and 'x'
+        return " " if v == 0 else str(v)
 
-    # Labels
-    col_labels = "ABCDEF"
-    row_labels = "abcdef"
+    # Build lines for each layer, then stitch layers together line-by-line
+    layers_lines = []
+    for k in range(5):
+        layer = board[k]
+        if not isinstance(layer, list) or len(layer) != 6:
+            raise ValueError("Each layer must be a 6x6 grid.")
 
-    # Header Labels
-    header_parts = []
-    for i in range(num_layers):
-        layer_str = f"Layer {i+1}"
-        header_parts.append(f"{(' ')}{layer_str}{(' ' )}")
+        lines = []
+        lines.append(f"   Layer {k+1}   ")
+        lines.append(" |A|B|C|D|E|F")
+        lines.append("-+-+-+-+-+-+-")
 
-    # The '  ' at the beginning is because of the space taken by the row label in other lines
-    output.append("  " + " | ".join(header_parts))
+        for r in range(6):
+            row_label = chr(ord("a") + r)
+            row_vals = [cell_to_char(layer[r][c]) for c in range(6)]
 
-    # Column Labels
-    col_header_segment = "|" + "|".join(col_labels) + "|"
-    # The '   ' at the beginning is because of the row label
-    output.append("   " + "   ".join([col_header_segment for _ in range(num_layers)]))
+            lines.append(row_label + "|" + "|".join(row_vals))
 
-    # Separator Line
-    sep_segment = "-" + "+-" * num_cols
-    output.append("   " + " | ".join([sep_segment for _ in range(num_layers)]))
+        layers_lines.append(lines)
 
-    # Rows
-    for r in range(num_rows):
-        row_parts = []
-        for l in range(num_layers):
-            cells = []
-            for c in range(num_cols):
-                val = board[l][r][c]
-                # Empty cells (0) are dashes (_), 'x' is 'x', 1 or 2 are digits
-                if val == 0:
-                    cells.append(" _")
-                elif val == 'x':
-                    cells.append("x")
-                else:
-                    cells.append(str(val))
-            row_parts.append(f"{row_labels[r]}|" + "|".join(cells))
-        output.append(" ".join(row_parts))
+    # Join corresponding lines across layers with " | "
+    out_lines = []
+    for line_idx in range(9):  # 9 lines per layer
+        out_lines.append(" | ".join([layers_lines[layer_idx][line_idx] for layer_idx in range(5)]))
 
-    return "\n".join(output)
-
-
+    return "\n".join(out_lines)
 ###############################################################################
 
 ###############################################################################
 # Task 3
 
+class ColumnFullError(Exception):
+    """Raised when a valid column has no empty (0) slot."""
+    pass
+
+class InvalidColumnFormat(Exception):
+    """Raised when the column string is not exactly one A-F and one a-f."""
+    pass
+
+def postToIndex(col: str, board: list) -> list:
+    # check wheher input is valid
+    # eg are the letters in col inside (a,b,c,d,e,f) or (A,B,C,D,E,F)
+    # xX can be easily converted to i and j, whast left is what to return for k
+    # basically check thru all layers and return the index of the first layer that is empty
+    # if after the whole check is done, and an empty slot (== 0) isnt found, raise the ColumnFullError ( i alr created the class above)
+
 ###############################################################################
 
 ###############################################################################
 # Task 4
+def indexToPos(ind: list) -> str: 
+    # shouldnt be too hard, need to check length of input, convert them to letters according to index
+    # raise IndexOutOfRange of any of the integers inside input is not 0-5
 
 ###############################################################################
 
 ###############################################################################
 # Task 5
+def saveGame(game: dict, fname: str) -> None:
+    """
+    Save the game dictionary to a .csv file in the required format.
 
+    :param game: Game dictionary with keys 'Player 1', 'Player 2', 'Who', 'Board'
+    :type game: dict
+    :param fname: Output filename (should end with .csv)
+    :type fname: str
+    :return: None
+    :rtype: None
+    """
+    if not fname.lower().endswith(".csv"):
+        raise ValueError("Filename must end with .csv")
+    
+    board = game['Board']
+
+    with open(fname, mode='w', newline='') as f:
+        writer = csv.writer(f)
+
+        # Header rows
+        writer.writerow(['Player 1', game['Player 1']])
+        writer.writerow(['Player 2', game['Player 2']])
+        writer.writerow(['Who', game['Who']])
+        writer.writerow(['Board'])
+
+        # board rows
+        for l in range(5):
+            for r in range(6):
+                writer.writerow(board[l][r])
 ###############################################################################
 
 ###############################################################################
 # Task 6
+def loadGame(fname: str) -> dict:
+    """
+    Load a game dictionary from a .csv file saved in the required coursework format.
+
+    :param fname: Filename of the CSV game file.
+    :type fname: str
+    :return: Game dictionary with keys 'Player 1', 'Player 2', 'Who', 'Board'
+    :rtype: dict
+    :raises ValueError: If the file content format is invalid.
+    """
+    if not isinstance(fname, str):
+        raise TypeError("fname must be a string.")
+    if not fname.lower().endswith(".csv"):
+        raise ValueError("Filename must end with .csv")
+
+    with open(fname, mode="r", newline="") as f:
+        reader = csv.reader(f)
+        rows = [row for row in reader]
+
+    # Basic structure checks
+    if len(rows) < 34:
+        raise ValueError("File is too short to be a valid saved game.")
+
+    # Helper to read "Key,Value" rows
+    def get_kv(expected_key: str, row_idx: int) -> str:
+        row = rows[row_idx]
+        if len(row) < 2 or row[0] != expected_key:
+            raise ValueError(f"Expected '{expected_key}' on line {row_idx+1}.")
+        return row[1]
+
+    p1 = get_kv("Player 1", 0)
+    p2 = get_kv("Player 2", 1)
+    who_str = get_kv("Who", 2)
+    
+    try:
+        who = int(who_str)
+    except ValueError:
+        raise ValueError("Who must be an integer 1 or 2.")
+
+    if who not in (1, 2):
+        raise ValueError("Who must be 1 or 2.")
+
+    # Board marker line
+    if len(rows[3]) == 0 or rows[3][0] != "Board":
+        raise ValueError("Expected 'Board' on line 4.")
+
+    board_rows = rows[4:]
+    if len(board_rows) != 30:
+        raise ValueError(f"Expected 30 board rows after 'Board', found {len(board_rows)}.")
+
+    # Parse the 30 lines into a 5x6x6 board
+    board = [[[0 for _ in range(6)] for _ in range(6)] for _ in range(5)]
+
+    # function to covert the values in the csv file into the appropriatae values for each key in the game dict
+    def parse_cell(value: str):
+        value = value.strip()
+        if value == "x":
+            return "x"
+        # allow "0","1","2"
+        try:
+            v = int(value)
+        except ValueError:
+            raise ValueError(f"Invalid board cell value")
+        if v not in (0, 1, 2):
+            raise ValueError(f"Board cell must be 0, 1, or 2, got {v}.")
+        return v
+
+    # loop through each item in each row to populate the board
+    idx = 0
+    for l in range(5):
+        for r in range(6):
+            row = board_rows[idx]
+            idx += 1
+            if len(row) != 6:
+                raise ValueError("Each board row must contain exactly 6 values.")
+            board[l][r] = [parse_cell(val) for val in row]
+
+    return {"Player 1": p1, 
+            "Player 2": p2, 
+            "Who": who, 
+            "Board": board}
 
 ###############################################################################
 
 ###############################################################################
 # Task 7
-
+def findValidMoves(board: list) -> list:
+    #loop through all the columns in the board 
+    # return all the columns where at least 1 layer isnt full (== 0)
+    # return the format of list of 'xX's
+    
 ###############################################################################
 
 ###############################################################################
 # Task 8
+class MoveNotMade(Exception):
+    pass
+
+def makeMove(game: dict, move: str) -> dict:
+    # raise the MoveNotMade error any time an invalid move is tried
+    # basically use the findValidMoves function in task7, then check if 'move' string is in that list
 
 ###############################################################################
 
 ###############################################################################
 # Task 9
+class GameOverError(Exception):
+    pass
 
+def isWinner(game: dict) -> int:
+    
+    
 ###############################################################################
 
 ###############################################################################
 # Task 10
+def suggestMove(game: dict) -> str:
+    # also make use of task 7 function to first get the list of valid moves
+    # since the move doesnt need to be smart we can just pick the first index of the list
+    # should be very simple
 
 ###############################################################################
 
 ###############################################################################
 # Task 11
-
+def playGame():
+    # basically asking for inputs
+    # make use of functions written above ( u dont rlly have to wait for them to be done since u know the name alr)
+    # all the steps basically follow from the task description (mostly function calls)
+    # one important thing is when error is raised, dont let it crash but ask for new input
 ###############################################################################
 
 
