@@ -111,6 +111,8 @@ def printBoard(board: list) -> str:
         out_lines.append(" | ".join([layers_lines[layer_idx][line_idx] for layer_idx in range(5)]))
 
     return "\n".join(out_lines)
+
+
 ###############################################################################
 
 ###############################################################################
@@ -124,12 +126,67 @@ class InvalidColumnFormat(Exception):
     """Raised when the column string is not exactly one A-F and one a-f."""
     pass
 
-def postToIndex(col: str, board: list) -> list:
-    # check wheher input is valid
-    # eg are the letters in col inside (a,b,c,d,e,f) or (A,B,C,D,E,F)
-    # xX can be easily converted to i and j, whast left is what to return for k
-    # basically check thru all layers and return the index of the first layer that is empty
-    # if after the whole check is done, and an empty slot (== 0) isnt found, raise the ColumnFullError ( i alr created the class above)
+def posToIndex(col: str, board: list) -> list:
+    """
+    Converts a column string (e.g., 'Aa', 'aA') to a 3D board index [k, j, i].
+    k: level (0-indexed from bottom)
+    j: row index (0-indexed 'a' through 'f')
+    i: column index (0-indexed 'A' through 'F')
+
+    The function finds the first empty slot (value 0) in the specified column.
+
+    :param col: A string representing the column, e.g., 'Aa' or 'bF'.
+    :type col: str
+    :param board: The 3D game board [level][row][col].
+    :type board: list
+    :return: A list of three integers [k, j, i] representing the level, row, and column indices.
+    :rtype: list
+    :raises InvalidColumnFormat: If the input string is not in the correct format.
+    :raises ColumnFullError: If the specified column is full.
+    """
+    # Check whether input is valid
+    # e.g., are the letters in col inside (a,b,c,d,e,f) or (A,B,C,D,E,F)
+    if len(col) != 2:
+        raise InvalidColumnFormat("Column string must be exactly two characters long.")
+
+    # Define valid characters for rows and columns
+    row_chars = "abcdef"
+    col_chars = "ABCDEF"
+
+    char1, char2 = col[0], col[1]
+
+    row_char = None
+    col_char = None
+
+    # Determine which character is the row and which is the column
+    if char1.lower() in row_chars and char2.upper() in col_chars:
+        row_char = char1.lower()
+        col_char = char2.upper()
+    elif char2.lower() in row_chars and char1.upper() in col_chars:
+        row_char = char2.lower()
+        col_char = char1.upper()
+    else:
+        raise InvalidColumnFormat(
+            f"Invalid column format: '{col}'. Expected one lowercase (a-f) and one uppercase (A-F) character."
+        )
+
+    # xX can be converted to i and j
+    j = row_chars.index(row_char)  # row index
+    i = col_chars.index(col_char)  # column index
+
+    # Get board dimensions from board
+    num_levels = len(board)
+
+    # Check  all layers and return the index of the first layer that is empty (what's left is what to return for k)
+    # Iterate from bottom (level 0) upwards
+    for k in range(num_levels):
+        if board[k][j][i] == 0:
+            return [k, j, i]
+
+    # If after the whole check, and an empty slot (== 0) isn't found,
+    # raise the ColumnFullError.
+    raise ColumnFullError(f"Column {col} is full.")
+
 
 ###############################################################################
 
