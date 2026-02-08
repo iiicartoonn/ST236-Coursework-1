@@ -192,9 +192,44 @@ def posToIndex(col: str, board: list) -> list:
 
 ###############################################################################
 # Task 4
-def indexToPos(ind: list) -> str: 
-    # shouldnt be too hard, need to check length of input, convert them to letters according to index
-    # raise IndexOutOfRange of any of the integers inside input is not 0-5
+
+class IndexOutOfRangeError(Exception):
+    """Index outside valid range (0-5)"""
+    pass
+
+def indexToPos(ind: list) -> str:
+    """
+    Converts a list of integer indices [j,i] or [k,j,i] to a column string 'Xx'.
+    param ind: A list of integers, either [j,i] or [k,j,i].
+                j: row index (0-5 for 'a'-'f')
+                i: column index (0-5 for 'A'-'F')
+                k (optional): level index (ignored if present).
+    :type ind: list
+    :return: A string representation of the column, e.g., 'Aa'.
+    :rtype: str
+    :raises ValueError: If the input list length is not 2 or 3.
+    :raises IndexOutOfRangeError: If any index (j or i) is not an integer between 0 and 5.
+    """
+    # Define valid characters for rows and columns
+    row_chars = "abcdef"
+    col_chars = "ABCDEF"
+    
+    # Validate input length
+    if len(ind) not in [2, 3]:
+        raise ValueError("Input list must be of length 2 ([j,i]) or 3 ([k,j,i]).")
+
+    # Extract j and i (ignore k if present)
+    j, i = ind[-2], ind[-1]
+
+    # Validate indices are integers in range [0, 5]
+    if not (isinstance(i, int) and isinstance(j, int) and 0 <= i <= 5 and 0 <= j <= 5):
+        raise IndexOutOfRangeError(f"Indices j={j} and i={i} must be integers between 0 and 5 (inclusive).")
+
+    # Convert indices back to characters
+    row_char = row_chars[j]
+    col_char = col_chars[i]
+
+    return f"{row_char}{col_char}"
 
 ###############################################################################
 
