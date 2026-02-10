@@ -384,20 +384,74 @@ def isWinner(game: dict) -> int:
 
 ###############################################################################
 # Task 10
-def suggestMove(game: dict) -> str:
     # also make use of task 7 function to first get the list of valid moves
     # since the move doesnt need to be smart we can just pick the first index of the list
     # should be very simple
+def suggestMove(game: dict) -> str:
+    moves = findValidMoves(game['Board'])
 
+    if not moves:
+        raise GameOverError("No valid moves left.")
+
+    return moves[0]  
 ###############################################################################
 
 ###############################################################################
 # Task 11
 def playGame():
     # basically asking for inputs
+  p1 = input("Player 1 name (or 'load'): ")
+if p1 == "load":
+    fname = input("Filename: ")
+    game = loadGame(fname)
+else:
+    p2 = input("Player 2 name (C for computer): ")
+    game = newGame(p1, p2)
+  
+print(printBoard(game['Board']))
+
     # make use of functions written above ( u dont rlly have to wait for them to be done since u know the name alr)
     # all the steps basically follow from the task description (mostly function calls)
-    # one important thing is when error is raised, dont let it crash but ask for new input
+while True:
+        w = isWinner(game)
+        if w == 1:
+            print(f"{game['Player 1']} wins!")
+            return
+        if w == 2:
+            print(f"{game['Player 2']} wins!")
+            return
+        if len(findValidMoves(game['Board'])) == 0:
+            print("Draw.")
+            return
+
+        who = game['Who']
+        player = game['Player 1'] if who == 1 else game['Player 2']
+
+        if player == "C":
+            try:
+                move = suggestMove(game)
+                print("Computer plays:", move)
+                game = makeMove(game, move)
+            except GameOverError:
+                print("Draw.")
+                return
+            except Exception as e:
+                print("Computer move failed:", e)
+                return
+        else:
+            while True:
+                move = input(f"{player} enter move (e.g. aA or Aa): ")
+                try:
+                    game = makeMove(game, move)
+                    break
+                except MoveNotMade:
+                    print("Illegal move. Try again.")
+                except Exception as e:
+                    print("Invalid input:", e)
+                    print("Try again.")
+
+        print(printBoard(game['Board']))
+
 ###############################################################################
 
 
@@ -518,4 +572,5 @@ type "y" to proceed: ')
             print('Task 11: Call to "playGame" UNSUCCESSFUL.\n')
     else:
          print('You have chosen not to proceed.')   
+
 ###############################################################################
