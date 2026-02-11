@@ -355,10 +355,33 @@ def loadGame(fname: str) -> dict:
 ###############################################################################
 # Task 7
 def findValidMoves(board: list) -> list:
-    #loop through all the columns in the board 
+    """
+    Return a list of all valid moves on the current board.
+    A move is considered valid if (row, column) stack contains at least one empty cell across 5 levels.
+    Moves are returned in 'Xx' format.
+
+    :param board: 3d game board represented as board[level][row][column]
+    :type board: list
+    :return: A list of all valid move strings
+    :rtype: list
+    """
+  
+    row_Chars = "abcdef"
+    col_Chars = "ABCDEF"
+    moves = []
+
+    #loop through all the columns in the board
+    for j in range(6): # row
+      for i in range(6): # column
+        for k in range(5): # level
     # return all the columns where at least 1 layer isnt full (== 0)
+    if board[k][j][i] == 0:
+      moves.append(col_Chars[i] + row_Chars[j])
+      break
+      
     # return the format of list of 'xX's
-    
+    return moves
+  
 ###############################################################################
 
 ###############################################################################
@@ -367,9 +390,51 @@ class MoveNotMade(Exception):
     pass
 
 def makeMove(game: dict, move: str) -> dict:
+    """
+    Apply a new move to the current game and return the new game state.
+    
+    If the new move is invalid (incorrect format or not playable), MoveNotMade exception is raised.
+    
+    Otherwise, a deep copy of existing game is created, 
+    the counter of the current player is placed in the lowest available level,
+    and the turn is switched to the other player.
+
+    :param game: The existing game dictionary
+    :type game: dict
+    :param move: The new move string
+    :type move: str
+    :return: A new game dictionary reflecting the new move
+    :rtype: dict
+    """
     # raise the MoveNotMade error any time an invalid move is tried
     # basically use the findValidMoves function in task7, then check if 'move' string is in that list
+    if not isinstance(move, str) or len(move) != 2: # if move is not a string or not have length 2, raise MoveNotMade
+      raise MoveNotMade
 
+    row_Chars = "abcdef"
+    col_Chars = "ABCDEF"
+    c1 = move[0]
+    c2 = move[1]
+
+    if c1 in row_Chars and c2 in col_Chars: # standardise the move to 'Xx' version
+      standard_Move = c2 + c1
+    elif c1 in col_Chars and c2 in row_Chars:
+      standard_Move = c1 + c2
+    else:
+      raise MoveNotMade
+
+    valid_Moves = findValidMoves(game["Board"]) # check whether the move is in the valid move list
+    if standard_Move not in valid_Moves:
+      raise MoveNotMade
+
+    # if no move error raised, return the game after the new move
+    newgame =  deepcopy(game)
+    k,j,i = posToIndex(standard_Move, newgame["Board"]) # find the lowest available level
+    player = newgame["Who']
+    newgame[k][j][i] = player # mark the new move
+    newgame["Who"] = 2 if player == 1 else 1 # switch the turn
+    return newgame
+  
 ###############################################################################
 
 ###############################################################################
@@ -574,3 +639,4 @@ type "y" to proceed: ')
          print('You have chosen not to proceed.')   
 
 ###############################################################################
+
