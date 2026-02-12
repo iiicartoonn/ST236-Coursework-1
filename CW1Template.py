@@ -2,11 +2,10 @@ import csv
 from copy import deepcopy
 
 groupNumber = 6
-groupName = {'Matthew Thorpe' : 'u2272464',\
+groupName = {'Neen Rungsmaithong' : 'u2287039',\
              'Pedro Ramos Cervero' : 'u5593619',\
-             'Person 3 name' : 'Person 3 Username',\
-             'Person 4 name' : 'Person 4 Username',\
-             'Person 5 name' : 'Person 5 Username'}
+             'Ruihong Chang' : 'u5599966',\
+             'Eric Zhang' : 'u5632225'}
 
 
 ###############################################################################
@@ -117,7 +116,6 @@ def printBoard(board: list) -> str:
 
 ###############################################################################
 # Task 3
-
 class ColumnFullError(Exception):
     """Raised when a valid column has no empty (0) slot."""
     pass
@@ -146,6 +144,8 @@ def posToIndex(col: str, board: list) -> list:
     """
     # Check whether input is valid
     # e.g., are the letters in col inside (a,b,c,d,e,f) or (A,B,C,D,E,F)
+    if not isinstance(col, str):
+        raise InvalidColumnFormat("Column must be a string.")
     if len(col) != 2:
         raise InvalidColumnFormat("Column string must be exactly two characters long.")
 
@@ -159,16 +159,24 @@ def posToIndex(col: str, board: list) -> list:
     col_char = None
 
     # Determine which character is the row and which is the column
-    if char1.lower() in row_chars and char2.upper() in col_chars:
-        row_char = char1.lower()
-        col_char = char2.upper()
-    elif char2.lower() in row_chars and char1.upper() in col_chars:
-        row_char = char2.lower()
-        col_char = char1.upper()
+    if char1.islower() and char2.isupper():
+        if char1 in row_chars and char2 in col_chars:
+            row_char = char1
+            col_char = char2
+    elif char1.isupper() and char2.islower():
+        if char2 in row_chars and char1 in col_chars:
+            row_char = char2
+            col_char = char1
     else:
         raise InvalidColumnFormat(
             f"Invalid column format: '{col}'. Expected one lowercase (a-f) and one uppercase (A-F) character."
         )
+    
+    if row_char is None or col_char is None:
+        raise InvalidColumnFormat(
+            f"Invalid column format: '{col}'. Expected one lowercase (a-f) and one uppercase (A-F) character."
+        )
+
 
     # xX can be converted to i and j
     j = row_chars.index(row_char)  # row index
@@ -193,7 +201,7 @@ def posToIndex(col: str, board: list) -> list:
 ###############################################################################
 # Task 4
 
-class IndexOutOfRangeError(Exception):
+class IndexOutOfRange(Exception):
     """Index outside valid range (0-5)"""
     pass
 
@@ -208,7 +216,7 @@ def indexToPos(ind: list) -> str:
     :return: A string representation of the column, e.g., 'Aa'.
     :rtype: str
     :raises ValueError: If the input list length is not 2 or 3.
-    :raises IndexOutOfRangeError: If any index (j or i) is not an integer between 0 and 5.
+    :raises IndexOutOfRange: If any index (j or i) is not an integer between 0 and 5.
     """
     # Define valid characters for rows and columns
     row_chars = "abcdef"
@@ -218,20 +226,26 @@ def indexToPos(ind: list) -> str:
     if len(ind) not in [2, 3]:
         raise ValueError("Input list must be of length 2 ([j,i]) or 3 ([k,j,i]).")
 
-    # Extract j and i (ignore k if present)
+    # Extract j and i
     j, i = ind[-2], ind[-1]
+    k = None
+    if len(ind) == 3:
+        k = ind[0]
 
-    # Validate indices are integers in range [0, 5]
+    # Validate indices are integers in range [0, 5] and k in range [0, 4]
     if not (isinstance(i, int) and isinstance(j, int) and 0 <= i <= 5 and 0 <= j <= 5):
-        raise IndexOutOfRangeError(f"Indices j={j} and i={i} must be integers between 0 and 5 (inclusive).")
+        raise IndexOutOfRange(f"Indices j={j} and i={i} must be integers between 0 and 5 (inclusive).")
+    if k is not None:
+        if not isinstance(k, int) or not (0 <= k <= 4):
+            raise IndexOutOfRange(f"k = {k} is invalid. k must be an integer between 0 and 4 inclusive.")
 
     # Convert indices back to characters
     row_char = row_chars[j]
     col_char = col_chars[i]
 
-    return f"{row_char}{col_char}"
-
+    return f"{col_char}{row_char}" #format 'Xx'
 ###############################################################################
+
 
 ###############################################################################
 # Task 5
@@ -370,18 +384,15 @@ def findValidMoves(board: list) -> list:
     col_Chars = "ABCDEF"
     moves = []
 
-    #loop through all the columns in the board
+    # We only need to check the highest level (index 4)
+    # If the top cell is empty, the column can accept a move.
     for j in range(6): # row
-      for i in range(6): # column
-        for k in range(5): # level
-    # return all the columns where at least 1 layer isnt full (== 0)
-    if board[k][j][i] == 0:
-      moves.append(col_Chars[i] + row_Chars[j])
-      break
+        for i in range(6): # column
+            if board[4][j][i] == 0:
+                moves.append(col_Chars[i] + row_Chars[j]) #append in the format "Xx"
       
-    # return the format of list of 'xX's
     return moves
-  
+      
 ###############################################################################
 
 ###############################################################################
@@ -409,7 +420,7 @@ def makeMove(game: dict, move: str) -> dict:
     # raise the MoveNotMade error any time an invalid move is tried
     # basically use the findValidMoves function in task7, then check if 'move' string is in that list
     if not isinstance(move, str) or len(move) != 2: # if move is not a string or not have length 2, raise MoveNotMade
-      raise MoveNotMade
+      raise MoveNotMade("Invalid Move.")
 
     row_Chars = "abcdef"
     col_Chars = "ABCDEF"
@@ -421,17 +432,22 @@ def makeMove(game: dict, move: str) -> dict:
     elif c1 in col_Chars and c2 in row_Chars:
       standard_Move = c1 + c2
     else:
-      raise MoveNotMade
+      raise MoveNotMade("Invalid Move.")
 
     valid_Moves = findValidMoves(game["Board"]) # check whether the move is in the valid move list
     if standard_Move not in valid_Moves:
-      raise MoveNotMade
+      raise MoveNotMade("Invalid Move.")
 
     # if no move error raised, return the game after the new move
-    newgame =  deepcopy(game)
-    k,j,i = posToIndex(standard_Move, newgame["Board"]) # find the lowest available level
-    player = newgame["Who']
-    newgame[k][j][i] = player # mark the new move
+    newgame = deepcopy(game)
+
+    try:
+        k, j, i = posToIndex(standard_Move, newgame["Board"])
+    except (InvalidColumnFormat, ColumnFullError):
+        raise MoveNotMade("Invalid Move.")
+
+    player = newgame['Who']
+    newgame["Board"][k][j][i] = player # mark the new move
     newgame["Who"] = 2 if player == 1 else 1 # switch the turn
     return newgame
   
@@ -439,20 +455,106 @@ def makeMove(game: dict, move: str) -> dict:
 
 ###############################################################################
 # Task 9
-class GameOverError(Exception):
-    pass
 
 def isWinner(game: dict) -> int:
-    
-    
+    """
+    Checks if either player has won (4 in a row) on the 3D board.
+
+    Returns:
+      1  -> Player 1 has won
+      2  -> Player 2 has won
+      0  -> no winner yet and there are still empty spaces
+     -1  -> no winner and the board is full (draw)
+    """
+    board = game["Board"]
+
+    # Board dimensions: 5 layers (levels), 6 rows, 6 columns
+    K, J, I = 5, 6, 6
+
+    # possible directions for "4 in a row".
+    # only include each direction once (no need to check both forward and backward).
+    directions = [
+        (1, 0, 0),   # straight up through layers (vertical in 3D)
+        (0, 1, 0),   # along rows (a->f)
+        (0, 0, 1),   # along columns (A->F)
+
+        (0, 1, 1),   # diagonal within a layer (row+col)
+        (0, 1, -1),  # diagonal within a layer (row-col)
+
+        (1, 1, 0),   # diagonal across layers and rows
+        (1, -1, 0),  # diagonal across layers and rows (other way)
+
+        (1, 0, 1),   # diagonal across layers and cols
+        (1, 0, -1),  # diagonal across layers and cols (other way)
+
+        (1, 1, 1),   # full 3D diagonal
+        (1, 1, -1),  # full 3D diagonal (one axis reversed)
+        (1, -1, 1),  # full 3D diagonal (one axis reversed)
+        (1, -1, -1), # full 3D diagonal (two axes reversed)
+    ]
+
+    # helper function: checks if indices are inside the board
+    def in_bounds(k, j, i) -> bool:
+        return 0 <= k < K and 0 <= j < J and 0 <= i < I
+
+    any_empty = False  
+
+    # loop through every position in the 3D board
+    for k in range(K):
+        for j in range(J):
+            for i in range(I):
+                v = board[k][j][i]
+
+                # if we ever see a 0, the board isn't full yet
+                if v == 0:
+                    any_empty = True
+                    continue
+
+                # blocked squares ('x') cannot start a winning line
+                if v == "x":
+                    continue
+
+                # at this point v should be 1 or 2 (a player's counter)
+
+                # try every direction from this starting point
+                for dk, dj, di in directions:
+                    # find possible end position
+                    end_k = k + 3 * dk
+                    end_j = j + 3 * dj
+                    end_i = i + 3 * di
+
+                    # if the end position would be out of bounds, skip this direction
+                    if not in_bounds(end_k, end_j, end_i):
+                        continue
+
+                    # check the next 3 cells in this direction are the same as v
+                    if (board[k + dk][j + dj][i + di] == v and
+                        board[k + 2*dk][j + 2*dj][i + 2*di] == v and
+                        board[k + 3*dk][j + 3*dj][i + 3*di] == v):
+                        return v  # winner found (1 or 2)
+
+    # no winner found anywhere on the board
+    if any_empty:
+        return 0   # game still ongoing
+    else:
+        return -1  # board full and no winner -> draw    
 ###############################################################################
 
 ###############################################################################
 # Task 10
-    # also make use of task 7 function to first get the list of valid moves
-    # since the move doesnt need to be smart we can just pick the first index of the list
-    # should be very simple
+class GameOverError(Exception):
+    pass
+
 def suggestMove(game: dict) -> str:
+    """
+    Selects the next move from the available valid moves on the board by selecting the first valid coordinate found during the board scan.
+
+    :param game: A dictionary containing the current 'Board' state and metadata.
+    :type game: dict
+    :return: The selected move coordinate in 'Xx' format (e.g., 'Ab').
+    :rtype: str
+    :raises GameOverError: If the board is full and no valid moves remain.
+    """
     moves = findValidMoves(game['Board'])
 
     if not moves:
@@ -464,58 +566,98 @@ def suggestMove(game: dict) -> str:
 ###############################################################################
 # Task 11
 def playGame():
-    # basically asking for inputs
-  p1 = input("Player 1 name (or 'load'): ")
-if p1 == "load":
-    fname = input("Filename: ")
-    game = loadGame(fname)
-else:
-    p2 = input("Player 2 name (C for computer): ")
-    game = newGame(p1, p2)
-  
-print(printBoard(game['Board']))
+    """
+    Runs an interactive game loop for the 3D Connect-4 style game.
 
-    # make use of functions written above ( u dont rlly have to wait for them to be done since u know the name alr)
-    # all the steps basically follow from the task description (mostly function calls)
-while True:
+    Behaviour:
+    - Prompts for Player 1 name. If Player 1 enters "load", the game is loaded from a CSV file.
+    - Otherwise prompts for Player 2 name. Player 2 can be "C" to act as a computer player.
+    - Prints the board after each move.
+    - Repeats until Player 1 wins, Player 2 wins, or the game is a draw.
+
+    Notes:
+    - Uses previously defined functions: newGame, loadGame, printBoard, makeMove,
+      isWinner, findValidMoves, suggestMove.
+    - Relies on custom exceptions: MoveNotMade, GameOverError.
+    """
+    # either start new game or load existing 
+    p1 = input("Player 1 name (or 'load'): ")
+
+    if p1 == "load":
+        # If user wants to load a game, ask for a filename and load it
+        fname = input("Filename: ")
+        game = loadGame(fname)
+    else:
+        # Otherwise start a new game
+        p2 = input("Player 2 name (C for computer): ")
+        game = newGame(p1, p2)
+
+    # Print initial board
+    print(printBoard(game["Board"]))
+
+    # main game loop
+    while True:
+        # Check if anyone has won (or if the game is finished)
         w = isWinner(game)
+
         if w == 1:
+            # Player 1 has won
             print(f"{game['Player 1']} wins!")
             return
+
         if w == 2:
+            # Player 2 has won
             print(f"{game['Player 2']} wins!")
             return
-        if len(findValidMoves(game['Board'])) == 0:
+
+        # If no valid moves remain, it's a draw (board is full)
+        if len(findValidMoves(game["Board"])) == 0:
             print("Draw.")
             return
 
-        who = game['Who']
-        player = game['Player 1'] if who == 1 else game['Player 2']
+        # Figure out whose turn it is
+        who = game["Who"]  # 1 or 2
+        player = game["Player 1"] if who == 1 else game["Player 2"]
 
+        # computer player's turn
         if player == "C":
             try:
+                # Suggest any valid move and apply it
                 move = suggestMove(game)
                 print("Computer plays:", move)
                 game = makeMove(game, move)
+
             except GameOverError:
+                # No valid moves left
                 print("Draw.")
                 return
+
             except Exception as e:
+                # Any unexpected error (helps debugging)
                 print("Computer move failed:", e)
                 return
+
+        # human player
         else:
+            # Keep asking until a valid move is made
             while True:
                 move = input(f"{player} enter move (e.g. aA or Aa): ")
                 try:
+                    # Try to apply the move
                     game = makeMove(game, move)
-                    break
+                    break  # move successful -> exit input loop
+
                 except MoveNotMade:
+                    # Move string or column is invalid/full
                     print("Illegal move. Try again.")
+
                 except Exception as e:
+                    # Any other unexpected input-related error
                     print("Invalid input:", e)
                     print("Try again.")
 
-        print(printBoard(game['Board']))
+        # Print the board after the move
+        print(printBoard(game["Board"]))
 
 ###############################################################################
 
