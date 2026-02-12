@@ -223,8 +223,9 @@ def indexToPos(ind: list) -> str:
     col_chars = "ABCDEF"
     
     # Validate input length
-    if len(ind) not in [2, 3]:
-        raise ValueError("Input list must be of length 2 ([j,i]) or 3 ([k,j,i]).")
+    if not isinstance(ind, list) or len(ind) not in (2, 3):
+        raise IndexOutOfRange("Index must be [j,i] or [k,j,i].")
+
 
     # Extract j and i
     j, i = ind[-2], ind[-1]
@@ -260,8 +261,9 @@ def saveGame(game: dict, fname: str) -> None:
     :return: None
     :rtype: None
     """
-    if not fname.lower().endswith(".csv"):
+    if not isinstance(fname, str) or not fname.lower().endswith(".csv"):
         raise ValueError("Filename must end with .csv")
+
     
     board = game['Board']
 
@@ -301,10 +303,6 @@ def loadGame(fname: str) -> dict:
         reader = csv.reader(f)
         rows = [row for row in reader]
 
-    # Basic structure checks
-    if len(rows) < 34:
-        raise ValueError("File is too short to be a valid saved game.")
-
     # Helper to read "Key,Value" rows
     def get_kv(expected_key: str, row_idx: int) -> str:
         row = rows[row_idx]
@@ -328,7 +326,7 @@ def loadGame(fname: str) -> dict:
     if len(rows[3]) == 0 or rows[3][0] != "Board":
         raise ValueError("Expected 'Board' on line 4.")
 
-    board_rows = rows[4:]
+    board_rows = [r for r in rows[4:] if r]  # ignore blank rows
     if len(board_rows) != 30:
         raise ValueError(f"Expected 30 board rows after 'Board', found {len(board_rows)}.")
 
@@ -460,6 +458,10 @@ def isWinner(game: dict) -> int:
     """
     Checks if either player has won (4 in a row) on the 3D board.
 
+    A win is defined as four identical player tokens (1 or 2) in a sequence 
+    along any of the 76 possible winning lines in a 6x6x5 grid (horizontal, 
+    vertical, or diagonal across any 3D plane).
+
     Returns:
       1  -> Player 1 has won
       2  -> Player 2 has won
@@ -580,17 +582,32 @@ def playGame():
       isWinner, findValidMoves, suggestMove.
     - Relies on custom exceptions: MoveNotMade, GameOverError.
     """
-    # either start new game or load existing 
-    p1 = input("Player 1 name (or 'load'): ")
 
-    if p1 == "load":
-        # If user wants to load a game, ask for a filename and load it
-        fname = input("Filename: ")
-        game = loadGame(fname)
-    else:
-        # Otherwise start a new game
-        p2 = input("Player 2 name (C for computer): ")
-        game = newGame(p1, p2)
+    # loop for player names, either start new game or load existing 
+    while True:
+        p1 = input("Player 1 name (or 'load'): ").strip()
+
+        # handle load option
+        if p1.lower() == "load":
+            fname = input("Filename: ").strip()
+            try:
+                game = loadGame(fname)
+                break  # success -> leave loop
+            except Exception as e:
+                print("Could not load game:", e)
+                print("Try again.\n")
+                continue
+
+        # otherwise start a new game
+        p2 = input("Player 2 name (C for computer): ").strip()
+
+        try:
+            game = newGame(p1, p2)
+            break  
+        except Exception as e:
+            print("Invalid input:", e)
+            print("Try again.\n")
+
 
     # Print initial board
     print(printBoard(game["Board"]))
@@ -781,4 +798,3 @@ type "y" to proceed: ')
          print('You have chosen not to proceed.')   
 
 ###############################################################################
-
